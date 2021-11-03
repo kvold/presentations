@@ -1,0 +1,329 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+		<meta name="author" content="Erlend">
+
+		<title>reveal.js</title>
+
+		<link rel="stylesheet" href="dist/reset.css">
+		<link rel="stylesheet" href="dist/reveal.css">
+		<link rel="stylesheet" href="dist/theme/black.css">
+
+		<!-- Theme used for syntax highlighted code -->
+		<link rel="stylesheet" href="plugin/highlight/monokai.css">
+	</head>
+
+	<body>
+		<div class="reveal">
+			<div class="slides">
+				<section>
+					<h3>Postgres og Postgis</h3>
+					<p>Innføring og tips</p>
+				</section>
+
+				<section>
+					<section>
+						<h3>Hva er PostgreSQL og PostGIS?</h3>
+					</section>
+					<section>
+						<h5>PostgreSQL</h5>
+						<ul>
+							<li>Gratis open source database</li>
+							<li>Begynte som Ingres tidlig på 70-tallet</li>
+							<li>Fikk støtte for SQL i 1996, PostgreSQL ble født</li>
+							<li>1 major release i året. Støttet i 5 år</li>
+							<li>Databasestruktur:</li>
+							<ul>
+								<li style="font-size:0.75em";>1 Postgres-installasjon kan ha mange databaser</li>
+								<li style="font-size:0.75em";>1 database kan ha mange skjemaer (namespaces)</li>
+								<li style="font-size:0.75em";>1 skjema kan ha mange tabeller med data</li>
+							</ul>
+						</ul>
+					</section>
+					<section>
+						<h5>PostGIS</h5>
+						<ul>
+							<li>Extension til PostgreSQL</li>
+							<li>Støtte for geografiske objekter, romlige spørringer, transformasjoner</li>
+							<li><pre>
+<code class="language-sql" data-trim>
+CREATE EXTENSION postgis;
+SELECT PostGIS_Full_Version();
+</code></pre></li>
+						</ul>
+					</section>
+				</section>
+
+				<section>
+					<section>
+						<h2>Programvare og klienter</h2>
+					</section>
+					<section>
+						<h5>Klienter</h5>
+						<ul>
+							<li>Dbeaver (GUI, kartvisning, anbefalt)</li>
+							<li>Pgadmin (GUI, standard)</li>
+							<li>Psql eller pgcli (CLI)</li>
+							<li>Mange alternativer:<br><a href="https://wiki.postgresql.org/wiki/PostgreSQL_Clients">https://wiki.postgresql.org/wiki/PostgreSQL_Clients</a></li>
+						</ul>
+					</section>
+					<section>
+						<h2>Andre</h2>
+						<ul>
+							<li>TimescaleDB</li>
+							<li>pgpointcloud</li>
+							<li>Automatisk REST API: PostgREST / pREST</li>
+							<li>Automatisk Graphql API: PostGraphile / Hasura</li>
+							<li>Og mye annet: <a href="https://github.com/dhamaniasad/awesome-postgres">https://github.com/dhamaniasad/awesome-postgres</a></li>
+						</ul>
+					</section>
+				</section>
+
+				<section>
+					<section>
+						<h2>PostgreSQL-spørringer <br>tips og funksjonalitet</h2>
+					</section>
+					<section>
+						<h2>Diverse tips</h2>
+						<ul>
+							<li>Bruk TEXT, ikke VARCHAR/CHAR</li>
+							<li>Helst ikke bruk store bokstaver, mellomrom eller andre spesialtegn i tabell- og kolonnenavn</li>
+							<li>Bruk identity columns, ikke serial</li>
+							<li>Foreign Data Wrappers (FDW)</li>
+							<li>Materialized view vs view</li>
+							<li>Har Boolean types</li>
+						</ul>
+					</section>
+					<section>
+						<h2>Flere tips</h2>
+						<ul>
+							<li>UNION ALL er raskere enn UNION (sjekker ikke duplikater)</li>
+							<li>Ikke kjør SELECT *;</li>
+							<li>Spør/filtrer på kolonner som har indekser</li>
+							<li>Index-only queries er det raskeste</li>
+							<li>Search Path gir mange muligheter</li>
+							<li>Postgres-dokumentasjonen er god med mange eksempler:<a href="https://www.postgresql.org/docs/current/">https://www.postgresql.org/docs/current/</a></li>
+					</ul>
+					</section>
+					<section>
+						<h2>JSON- og JSONB-støtte</h2>
+						<ul>
+							<li>JSONB fremfor JSON, gir deg struktursjekk, index, query</li>
+							<li>Støtte for subscripting i Postgres 14:
+<pre><code class="language-sql" data-trim>
+SELECT geometri
+FROM bygninger
+WHERE details['egenskaper']['farge'] = '"gul"'
+  AND details['egenskaper']['datakvalitet'] = '"medium"';
+</code></pre></li>
+						</ul>
+					</section>
+					<section>
+						<h2>Subqueries vs CTE</h2>
+						<ul>
+							<li>Common Table Expressions (CTE), aka “WITH”:
+							<pre><code class="language-sql" data-trim>
+SELECT count(*) FROM n50kartdata.bygg
+WHERE ST_INTERSECTS(omrade, (
+	SELECT omrade
+	FROM kommuner WHERE navn = 'Ringerike'));
+
+WITH kommune AS (
+	SELECT omrade
+	FROM kommuner WHERE navn_norsk = 'Ringerike')
+SELECT count(n.*)
+FROM n50kartdata.bygg n, kommune k
+WHERE ST_INTERSECTS(n.omrade, k.omrade);
+</code></pre>
+							</li>
+							<li>Mer lesbart enn store Subquery-spørringer</li>
+						</ul>
+					</section>
+				</section>
+
+
+				<section>
+					<section>
+						<h2>PostgreSQL enkle administrasjonstips</h2>
+					</section>
+					<section>
+						<ul>
+							<li>"Alt" av metadata er tilgjengelig via spørringer
+<pre><code class="language-sql" data-trim>
+--se gjeldende spørringer, locks etc etc:
+SELECT * from pg_stat_activity;
+
+--se størrelse på en tabell:
+SELECT pg_size_pretty(pg_relation_size('bygninger'));
+
+--se alle brukere:
+SELECT * from pg_user;
+</code></pre></li>
+						</ul>
+					</section>
+					<section>
+						<h2>Bruk roller</h2>
+						<ul>
+							<li>Brukere kan arve rettigheter fra roller
+<pre><code class="language-sql" data-trim>
+CREATE ROLE les_rolle;
+CREATE USER bruker1 NOCREATEDB INHERIT LOGIN
+	WITH PASSWORD 'password';
+GRANT les_rolle TO bruker1;
+REVOKE les_rolle FROM bruker1;
+</code></pre></li>
+							<li>Pass på skriverettigheter i public-schema</li>
+						</ul>
+					</section>
+					<section>
+						<h2>Enkel backup/restore</h2>
+						<ul>
+							<li>Kommandolinjeverktøy
+<pre><code class="language-bash" data-trim>
+# Backup databasen i sql-format
+pg_dump -U {brukernavn} {fra_db} -f {dumpfilename.sql}
+
+# Restore databasen fra sql-fil
+psql -U {brukernavn} -d {til_db} -f {dumpfilename.sql}
+
+# Backup komprimert binærformat
+pg_dump -U {brukernavn} -Fc {fra_db} > {databasedump.dump}
+
+# Restore komprimert binærformat
+pg_restore -U {brukernavn} -d {til_db} {databasedump.dump}
+</code></pre></li>
+							<li>Kan også dumpe spesifikke skjema (-n), tabeller (-t), kun data (-a) eller kun skjemastruktur (-s) mm.</li>
+						</ul>
+					</section>
+				</section>
+
+
+				<section>
+					<section>
+						<h2>Postgis Tips</h2>
+					</section>
+					<section>
+						<h5>Geometrilagring</h5>
+						<ul>
+							<li>Lagrer geometri i nye kolonnetyper</li>
+							<li>Muligheter:
+							<pre><code class="language-sql" data-trim>
+CREATE TABLE eksempel (
+kolonnenavn geometry(geometry),
+kolonnenavn geometry(geometry, 4258),
+kolonnenavn geometry(MultiPolygon, 4258),
+kolonnenavn geometry(MultiPolygonZ, 4258)
+);
+</code></pre>
+							</li>
+							<li>QGIS viser veldefinerte kolonner raskere</li>
+						</ul>
+					</section>
+					<section>
+						<h5>Nyttige funksjoner:</h5>
+						<ul>
+							<li>ST_AsGeoJSON og ST_GeomFromGeoJSON</li>
+							<li>ST_AsText, ST_AsGML, ST_AsKML, ST_AsMVT, ST_ASGeoBuf</li>
+							<li>ST_IsValid, ST_IsValidReason, ST_MakeValid</li>
+							<li><a href="https://postgis.net/docs/reference.html">https://postgis.net/docs/reference.html</a></li>
+						</ul>
+					</section>
+					<section>
+						<h2>Velg riktig funksjon for ditt behov:</h2>
+						<ul>
+							<li>ST_Intersects vs ST_Intersection</li>
+							<li>ST_Buffer vs ST_Dwithin</li>
+							<li>ST_Collect vs ST_Union</li>
+							<li>ST_Transform vs ST_SetSRID</li>
+							<li>Mer unøyaktige transformasjoner jo lenger nord du kommer</li>
+						</ul>
+					</section>
+				</section>
+
+
+				<section>
+					<section>
+						<h2>Ytelse og tuning</h2>
+					</section>
+					<section>
+						<h5>Connections og individuelle transaksjoner er dyre</h5>
+						<ul>
+							<li>Connection pooling</li>
+							<li>Bruk batch-spørringer der det er mulig</li>
+							<li>Kjør alltid commit</li>
+							<li>Vær forsiktig med ORM-bruk</li>
+						</ul>
+					</section>
+					<section>
+						<h2>Indekser</h2>
+						<ul>
+							<li>B-tree – det meste</li>
+							<li>GIST – geometri, fulltekst</li>
+							<li>GIN – arrays, jsonb, tokenisert tekst</li>
+						</ul>
+							<pre><code class="language-sql" data-trim>
+--Multikolonneindekser
+CREATE INDEX title_idx ON bygninger (objtype, kvalitet);
+--Partial indekser:
+CREATE INDEX title_idx ON bygninger (objtype)
+	WHERE objtype = 'bolig';
+--Clustering:
+CLUSTER bygninger USING title_idx;
+</code></pre>
+					</section>
+					<section>
+						<h2>EXPLAIN ANALYZE</h2>
+						<ul>
+							<li>Forstå hva Postgres må gjøre for å utføre spørringen</li>
+							<li>EXPLAIN = Gjetter</li>
+							<li>EXPLAIN ANALYZE = Utfører</li>
+							<li>Visuell presentasjon: <a href="https://tatiyants.com/pev/">https://tatiyants.com/pev/</a> <br>
+								<a href="https://explain.depesz.com/">https://explain.depesz.com/</a></li>
+							<li>Kjør VACUUM ANALYZE; for at query planner skal oppdage endringer</li>
+						</ul>
+					</section>
+					<section>
+						<h2>Hardware</h2>
+						<ul>
+							<li>Enten SSD eller minne (helst begge deler)</li>
+							<li>Read Only slaves</li>
+							<li>Tuningsforslag: <a href="https://pgtune.leopard.in.ua/">https://pgtune.leopard.in.ua/</a></li>
+						</ul>
+					</section>
+				</section>
+
+				<section>
+					<h2>Andre tips</h2>
+					<ul>
+						<li>En PostgreSQL Fellesbase med "alle" geografiske datasett er tilgjengelig internt i KV</li>
+					</ul>
+				</section>
+
+				<section>
+					<h2>Spørsmål?</h2>
+				</section>
+
+			</div>
+		</div>
+
+		<script src="dist/reveal.js"></script>
+		<script src="plugin/notes/notes.js"></script>
+		<script src="plugin/markdown/markdown.js"></script>
+		<script src="plugin/highlight/highlight.js"></script>
+		<script>
+			// More info about initialization & config:
+			// - https://revealjs.com/initialization/
+			// - https://revealjs.com/config/
+			Reveal.initialize({
+				hash: true,
+				backgroundTransition: 'none',
+				slideNumber: true,
+
+				// Learn about plugins: https://revealjs.com/plugins/
+				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ]
+			});
+		</script>
+	</body>
+</html>
