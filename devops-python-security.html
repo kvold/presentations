@@ -1,0 +1,203 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+        <meta name="author" content="Erlend">
+
+        <title>Python, Conda, og sikkerhet</title>
+
+        <link rel="stylesheet" href="dist/reset.css">
+        <link rel="stylesheet" href="dist/reveal.css">
+        <link rel="stylesheet" href="dist/theme/black.css">
+
+        <!-- Theme used for syntax highlighted code -->
+        <link rel="stylesheet" href="plugin/highlight/monokai.css">
+    </head>
+
+    <body>
+        <div class="reveal">
+            <div class="slides">
+                <section>
+                    <h3>Python dependency checking</h3>
+                    <p></p>
+                </section>
+
+                <section>
+                    <section>
+                        <h3>Hvordan fungerer det?</h3>
+                    </section>
+                    <section>
+                        <h5>Hvordan sjekkes en applikasjon?</h5>
+                        <ul>
+                            <li>Et program leser manifestfilen og sjekker avhengighetene mot en sårbarhetsliste</li>
+                            <ul>
+                            <li style="font-size:0.9em";>Manifestfil: Fil som inneholder en liste over alle avhengigheter i prosjektet</li>
+                            <li style="font-size:0.9em";>Slår opp avhengighetene i en <a href="https://en.wikipedia.org/wiki/Common_Vulnerabilities_and_Exposures">Common Vulnerabilities and Exposures (CVE)</a>-database</li>
+                            <ul>
+                            <li style="font-size:0.70em";>Finnes flere forskjellige sårbarhetsdatabaser, men datagrunnlaget er ofte likt</li>
+                            </ul>
+                            </ul>
+                        </ul>
+                    </section>
+                    <section>
+                        <h5>Versjonering av avhengigheter</h5>
+                        <ul>
+                            <li>Semantic versioning: Major.Minor.Patch</li>
+                            <li>F.eks.: 2.1.18</li>
+                            <ul>
+                                <li style="font-size:0.70em";>Ødeleggende_endring.ny_funksjonalitet.bugfix_sikkerhetsoppdatering</li>
+                            </ul>
+                        </ul>
+                    </section>
+                    <section>
+                    <h5>Sikkerhets- vs patcheoppdateringer</h5>
+                    <ul>
+                        <li>Patch/sikkerhet har forskjellige krav</li>
+                        <li>Patch kan gjøres "ved behov", f.eks. ved hver deployment</li>
+                        <li>Men god håndtering av patcheoppdateringer øker sikkerheten</li>
+                    </ul>
+                    </section>
+                </section>
+
+
+               <section>
+                    <section>
+                        <h3>Manifestfiler</h3>
+                    </section>
+                    <section>
+                        <h5>Python Manifest</h5>
+                        <ul>
+                            <li>manifestfil: requirements.txt</li>
+                            <li><pre>
+<code class="language-bash" data-trim>
+# Create a requirements.txt from
+# current installation/virtualenv
+pip freeze > requirements.txt
+
+# install from requirements
+pip install -r requirements.txt
+
+# update all dependencies
+pip install -r requirements.txt --upgrade
+
+# Finn utdaterte pakker:
+pip list -o
+</code></pre></li>
+                            <li>Kan "pinne" versjoner: Django==3.2.*</li>
+                        </ul>
+                </section>
+                <section>
+                        <h5>Conda Manifest</h5>
+                        <ul>
+                            <li>manifestfil: requirements.txt</li>
+                            <li><pre>
+<code class="language-bash" data-trim>
+# Create a requirements.txt from
+# current installation/virtualenv
+conda list -e > requirements.txt
+
+# Create environment from manifest
+conda create -n new environment --file requirements.txt
+</code></pre></li>
+                        <li>OBS: Conda sin requirements.txt != Python sin</li>
+                            <li><pre>
+<code class="language-bash" data-trim>
+# Men du kan installere pip i conda-miljøet,
+# for så å kjøre
+pip list --format=freeze > requirements.txt
+</code></pre></li>
+                        </ul>
+                    </section>
+                </section>
+
+
+                <section>
+                    <section>
+                        <h2>Løsninger</h2>
+                    </section>
+                    <section>
+                        <h5>Repo</h5>
+                        <ul>
+                            <li>Linux-repoer</li>
+                            <li>Hvis man klarer seg med pakker derfra er de "sikre"</li>
+                            <li>IT drift tar seg da av patching</li>
+                            <li>Den enkleste og kanskje sikreste måten å håndtere dependencies</li>
+                            <li>MEN: Ofte gamle pakker, ikke alle pakker er tilgjengelige</a></li>
+                        </ul>
+                    </section>
+                    <section>
+                        <h2>Github og dependabot</h2>
+                        <ul>
+                            <li>Github har innebygd Dependabot</li>
+                            <li>Foreslår oppdateringer og varsler om sikkerhetsproblemer</li>
+                            <li><a href="https://michaelcurrin.github.io/dev-cheatsheets/cheatsheets/version-control/github/dependabot.html">Om dependabot</a></li>
+                        </ul>
+                    </section>
+
+                    <section>
+                        <h2>Dependency scans Python</h2>
+                        <ul>
+                            <li>Kommersielt og omfattende sikkerhetsprogram: <a href="https://docs.snyk.io/products/snyk-open-source/language-and-package-manager-support/snyk-for-python">Snyk</a></li>
+                            <li><a href="https://github.com/pyupio/safety">Pyup Safety</a> har en gratisversjon for ikke-kommersielle prosjekter, men databasen oppdateres da kun 1 gang i måneden</li>
+                            <li><a href="https://owasp.org/www-project-dependency-check/">OWASP dependency-check</a> er gratis og omfattende, men Python-scanneren er eksperimentell</li>
+                            <li>Det jobbes med å lage dependency scans innebygd i Pypi/pip:</li>
+                            <ul>
+                                <li style="font-size:0.70em";>Sårbarhetsdatabase: <a href="https://github.com/pypa/advisory-db">advisory-db</a></li>
+                                <li style="font-size:0.70em";>Automatisk varsling via pip: <a href="https://github.com/pypa/warehouse/pull/9552">pull request</a></li>
+                            </ul>
+                        </ul>
+                    </section>
+                    <section>
+                        <h2>Dependency scans Conda</h2>
+                        <ul>
+                            <li>Utfordringer:</li>
+                            <ul>
+                                <li style="font-size:0.70em";>conda kan installere andre pakker enn bare python-pakker</li>
+                                <li style="font-size:0.70em";>conda sin manifestfil er ikke pip-kompatibel</li>
+                            </ul>
+                            <li><a href="https://pythonspeed.com/articles/conda-security-scans/">Scanning your Conda environment for security vulnerabilities</a></li>
+                            <li>Anbefalt dependency scanner: <a href="https://github.com/sonatype-nexus-community/jake">Jake</a></li>
+                            <ul>
+                                <li><pre>
+<code class="language-bash" data-trim>
+conda list | jake ddt
+</code></pre></li>
+                            </ul>
+                        </ul>
+                    </section>
+                    <section>
+                        <h2>Dependency scans Javascript</h2>
+                        <ul>
+                            <li>npm audit</li>
+                        </ul>
+                    </section>
+                </section>
+
+
+                <section>
+                    <h2>Spørsmål?</h2>
+                </section>
+
+            </div>
+        </div>
+
+        <script src="dist/reveal.js"></script>
+        <script src="plugin/notes/notes.js"></script>
+        <script src="plugin/markdown/markdown.js"></script>
+        <script src="plugin/highlight/highlight.js"></script>
+        <script>
+            // More info about initialization & config:
+            // - https://revealjs.com/initialization/
+            // - https://revealjs.com/config/
+            Reveal.initialize({
+                hash: true,
+                backgroundTransition: 'none',
+                slideNumber: true,
+
+                // Learn about plugins: https://revealjs.com/plugins/
+                plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ]
+            });
+        </script>
+    </body>
+</html>
