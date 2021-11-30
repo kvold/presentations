@@ -5,7 +5,7 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 		<meta name="author" content="Erlend">
 
-		<title>reveal.js</title>
+		<title>Postgres og Postgis - Innføring og tips</title>
 
 		<link rel="stylesheet" href="dist/reset.css">
 		<link rel="stylesheet" href="dist/reveal.css">
@@ -35,10 +35,10 @@
 							<li>Fikk støtte for SQL i 1996, PostgreSQL ble født</li>
 							<li>1 major release i året. Støttet i 5 år</li>
 							<li>Databasestruktur:</li>
-							<ul>
-								<li style="font-size:0.75em";>1 Postgres-installasjon kan ha mange databaser</li>
-								<li style="font-size:0.75em";>1 database kan ha mange skjemaer (namespaces)</li>
-								<li style="font-size:0.75em";>1 skjema kan ha mange tabeller med data</li>
+							<ul style="font-size:0.65em";>
+								<li>1 Postgres-installasjon kan ha mange databaser</li>
+								<li>1 database kan ha mange skjemaer (namespaces)</li>
+								<li>1 skjema kan ha mange tabeller med data</li>
 							</ul>
 						</ul>
 					</section>
@@ -47,11 +47,11 @@
 						<ul>
 							<li>Extension til PostgreSQL</li>
 							<li>Støtte for geografiske objekter, romlige spørringer, transformasjoner</li>
-							<li><pre>
-<code class="language-sql" data-trim>
-CREATE EXTENSION postgis;
-SELECT PostGIS_Full_Version();
-</code></pre></li>
+							<pre>
+							<code class="language-sql" data-trim>
+							CREATE EXTENSION postgis;
+							SELECT PostGIS_Full_Version();
+							</code></pre>
 						</ul>
 					</section>
 				</section>
@@ -66,7 +66,7 @@ SELECT PostGIS_Full_Version();
 							<li>Dbeaver (GUI, kartvisning, anbefalt)</li>
 							<li>Pgadmin (GUI, standard)</li>
 							<li>Psql eller pgcli (CLI)</li>
-							<li>Mange alternativer:<br><a href="https://wiki.postgresql.org/wiki/PostgreSQL_Clients">https://wiki.postgresql.org/wiki/PostgreSQL_Clients</a></li>
+							<li>Mange alternativer: <br><a href="https://wiki.postgresql.org/wiki/PostgreSQL_Clients">https://wiki.postgresql.org/wiki/PostgreSQL_Clients</a></li>
 						</ul>
 					</section>
 					<section>
@@ -104,40 +104,39 @@ SELECT PostGIS_Full_Version();
 							<li>Spør/filtrer på kolonner som har indekser</li>
 							<li>Index-only queries er det raskeste</li>
 							<li>Search Path gir mange muligheter</li>
-							<li>Postgres-dokumentasjonen er god med mange eksempler:<a href="https://www.postgresql.org/docs/current/">https://www.postgresql.org/docs/current/</a></li>
+							<li>Postgres-dokumentasjonen er god med mange eksempler: <a href="https://www.postgresql.org/docs/current/">https://www.postgresql.org/docs/current/</a></li>
 					</ul>
 					</section>
 					<section>
 						<h2>JSON- og JSONB-støtte</h2>
 						<ul>
 							<li>JSONB fremfor JSON, gir deg struktursjekk, index, query</li>
-							<li>Støtte for subscripting i Postgres 14:
-<pre><code class="language-sql" data-trim>
-SELECT geometri
-FROM bygninger
-WHERE details['egenskaper']['farge'] = '"gul"'
-  AND details['egenskaper']['datakvalitet'] = '"medium"';
-</code></pre></li>
+							<li>Støtte for subscripting i Postgres 14:</li>
+							<pre><code class="language-sql" data-trim>
+							SELECT geometri
+							FROM bygninger
+							WHERE details['egenskaper']['farge'] = '"gul"'
+							  AND details['egenskaper']['datakvalitet'] = '"medium"';
+							</code></pre>
 						</ul>
 					</section>
 					<section>
 						<h2>Subqueries vs CTE</h2>
 						<ul>
-							<li>Common Table Expressions (CTE), aka “WITH”:
+							<li>Common Table Expressions (CTE), aka “WITH”:</li>
 							<pre><code class="language-sql" data-trim>
-SELECT count(*) FROM n50kartdata.bygg
-WHERE ST_INTERSECTS(omrade, (
-	SELECT omrade
-	FROM kommuner WHERE navn = 'Ringerike'));
+							SELECT count(*) FROM n50kartdata.bygg
+							WHERE ST_INTERSECTS(omrade, (
+								SELECT omrade
+								FROM kommuner WHERE navn = 'Ringerike'));
 
-WITH kommune AS (
-	SELECT omrade
-	FROM kommuner WHERE navn_norsk = 'Ringerike')
-SELECT count(n.*)
-FROM n50kartdata.bygg n, kommune k
-WHERE ST_INTERSECTS(n.omrade, k.omrade);
-</code></pre>
-							</li>
+							WITH kommune AS (
+								SELECT omrade
+								FROM kommuner WHERE navn_norsk = 'Ringerike')
+							SELECT count(n.*)
+							FROM n50kartdata.bygg n, kommune k
+							WHERE ST_INTERSECTS(n.omrade, k.omrade);
+							</code></pre>
 							<li>Mer lesbart enn store Subquery-spørringer</li>
 						</ul>
 					</section>
@@ -150,17 +149,17 @@ WHERE ST_INTERSECTS(n.omrade, k.omrade);
 					</section>
 					<section>
 						<ul>
-							<li>"Alt" av metadata er tilgjengelig via spørringer
-<pre><code class="language-sql" data-trim>
---se gjeldende spørringer, locks etc etc:
-SELECT * from pg_stat_activity;
+							<li>"Alt" av metadata er tilgjengelig via spørringer</li>
+							<pre><code class="language-sql" data-trim>
+							--se gjeldende spørringer, locks etc etc:
+							SELECT * FROM pg_stat_activity;
 
---se størrelse på en tabell:
-SELECT pg_size_pretty(pg_relation_size('bygninger'));
+							--se størrelse på en tabell:
+							SELECT pg_size_pretty(pg_relation_size('bygninger'));
 
---se alle brukere:
-SELECT * from pg_user;
-</code></pre></li>
+							--se alle brukere:
+							SELECT * FROM pg_user;
+							</code></pre>
 						</ul>
 					</section>
 					<section>
@@ -207,7 +206,7 @@ pg_restore -U {brukernavn} -d {til_db} {databasedump.dump}
 					<section>
 						<h5>Geometrilagring</h5>
 						<ul>
-							<li>Lagrer geometri i nye kolonnetyper</li>
+							<li>PostGIS lagrer geometri i egne kolonnetyper</li>
 							<li>Muligheter:
 							<pre><code class="language-sql" data-trim>
 CREATE TABLE eksempel (
@@ -237,7 +236,9 @@ kolonnenavn geometry(MultiPolygonZ, 4258)
 							<li>ST_Buffer vs ST_Dwithin</li>
 							<li>ST_Collect vs ST_Union</li>
 							<li>ST_Transform vs ST_SetSRID</li>
-							<li>Mer unøyaktige transformasjoner jo lenger nord du kommer</li>
+							<ul>
+								<li style="font-size:0.75em";>Større sjanse for transformasjonsavvik jo flere UTM-soner du transformerer over</li>
+							</ul>
 						</ul>
 					</section>
 				</section>
@@ -277,10 +278,19 @@ CLUSTER bygninger USING title_idx;
 						<h2>EXPLAIN ANALYZE</h2>
 						<ul>
 							<li>Forstå hva Postgres må gjøre for å utføre spørringen</li>
-							<li>EXPLAIN = Gjetter</li>
-							<li>EXPLAIN ANALYZE = Utfører</li>
-							<li>Visuell presentasjon: <a href="https://tatiyants.com/pev/">https://tatiyants.com/pev/</a> <br>
+							<ul>
+							<li style="font-size:0.75em";>EXPLAIN = Gjetter</li>
+							<li style="font-size:0.75em";>EXPLAIN ANALYZE = Utfører</li>
+							<pre><code class="language-sql" data-trim>
+--Hva postgres tror må gjøres for å utføre spørringen:
+EXPLAIN SELECT objtype from bygninger;
+--Spørringen utføres, tidsbruk og query plan vises
+EXPLAIN ANALYZE SELECT objtype from bygninger;
+</code></pre>
+							<li>Visuell presentasjon: </li>
+								<a href="https://tatiyants.com/pev/">https://tatiyants.com/pev/</a> <br>
 								<a href="https://explain.depesz.com/">https://explain.depesz.com/</a></li>
+							</ul>
 							<li>Kjør VACUUM ANALYZE; for at query planner skal oppdage endringer</li>
 						</ul>
 					</section>
@@ -298,6 +308,7 @@ CLUSTER bygninger USING title_idx;
 					<h2>Andre tips</h2>
 					<ul>
 						<li>En PostgreSQL Fellesbase med "alle" geografiske datasett er tilgjengelig internt i KV</li>
+						<li style="font-size:0.75em";>Søk etter "fellesbase" i Confluence for mer informasjon</li>
 					</ul>
 				</section>
 
